@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "d0b8d561-3809-4f2e-a5ee-618d00d06f85",
+  "path": "agents-md",
+  "path_key": "agents-md",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "mblode/agent-skills/agents-md",
+    "subpath": "skills\\agents-md",
+    "branch": null
+  }
+}
