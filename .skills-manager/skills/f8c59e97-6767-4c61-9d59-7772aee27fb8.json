@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "f8c59e97-6767-4c61-9d59-7772aee27fb8",
+  "path": "ln-21-documentation-auditor",
+  "path_key": "ln-21-documentation-auditor",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "levnikolaevich/claude-code-skills/ln-21-documentation-auditor",
+    "subpath": "plugins\\codebase-audit-suite\\skills\\ln-21-documentation-auditor",
+    "branch": null
+  }
+}

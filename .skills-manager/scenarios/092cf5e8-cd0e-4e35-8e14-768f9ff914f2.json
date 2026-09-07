@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "scenario_id": "092cf5e8-cd0e-4e35-8e14-768f9ff914f2",
+  "name": "DevKit",
+  "description": "Default startup scenario",
+  "icon": "terminal",
+  "sort_order": 0
+}
