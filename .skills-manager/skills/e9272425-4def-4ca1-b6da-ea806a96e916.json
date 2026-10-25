@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "e9272425-4def-4ca1-b6da-ea806a96e916",
+  "path": "blender-motion-state-inspection",
+  "path_key": "blender-motion-state-inspection",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "affaan-m/ecc/blender-motion-state-inspection",
+    "subpath": "skills/blender-motion-state-inspection",
+    "branch": null
+  }
+}

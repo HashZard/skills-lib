@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "17b5fafb-2b36-43c6-b0f8-693d6b5478d8",
+  "path": "threejs-asset-pipeline",
+  "path_key": "threejs-asset-pipeline",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "cloudai-x/threejs-skills/threejs-asset-pipeline",
+    "subpath": "skills/threejs-asset-pipeline",
+    "branch": null
+  }
+}
