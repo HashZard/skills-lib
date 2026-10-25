@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "bff2e1cb-86bd-47b2-9e2b-5a502f3bc191",
+  "path": "blender-web-pipeline",
+  "path_key": "blender-web-pipeline",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "freshtechbro/claudedesignskills/blender-web-pipeline",
+    "subpath": "plugins/bundles/authoring-motion/skills/blender-web-pipeline",
+    "branch": null
+  }
+}
