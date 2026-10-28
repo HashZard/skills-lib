@@ -1,12 +1,12 @@
 ---
 name: agents-md
-description: Audits and edits agent instruction files, verifies repository commands, and connects AGENTS.md and CLAUDE.md without duplicate sources. Use when asked to "improve my AGENTS.md", "write a CLAUDE.md", or make instructions work across agents. For SKILL.md use agent-skills-creator.
+description: Audits and edits agent instruction files, verifies repository commands, and migrates repositories to AGENTS.md as the single shared source. Use when asked to "improve my AGENTS.md", "migrate CLAUDE.md to AGENTS.md", or make instructions work across agents.
 ---
 
 # AGENTS.md Setup and Audit
 
 - **IS:** wiring a repo so every agent tool in use reads the same rules, then auditing, scoring, refactoring, and writing the AGENTS.md / CLAUDE.md / CLAUDE.local.md files agents load at session start.
-- **IS NOT:** authoring SKILL.md files (use `agent-skills-creator`), project docs or READMEs (use `docs-writing` or `readme-creator`), or mining session history (use the external `cadence-advise` skill where installed; this skill audits the file as-is).
+- **IS NOT:** authoring SKILL.md files (use `agent-skills-creator`), project docs or READMEs (use `ghostwriter`), or mining session history (use the external `cadence-advise` skill where installed; this skill audits the file as-is).
 
 AGENTS.md files are execution contracts, not knowledge bases. Two tests catch the two ways a line fails.
 
@@ -15,7 +15,7 @@ AGENTS.md files are execution contracts, not knowledge bases. Two tests catch th
 
 Absolutes still earn their place for safety, data loss, format contracts, and rules this repo's agents have actually been observed to break.
 
-AGENTS.md is the tool-agnostic source of truth: Codex, Cursor, Copilot, and the rest of the agents.md list read it natively. Claude Code is the exception. It reads `CLAUDE.md`, not `AGENTS.md`, so a repo that uses Claude Code needs a `CLAUDE.md` whose first line is `@AGENTS.md` (or a `CLAUDE.md -> AGENTS.md` symlink when there are no Claude-only additions). If only a `CLAUDE.md` exists and another tool is in use, `git mv CLAUDE.md AGENTS.md` and add the pointer file; a copy of either drifts.
+AGENTS.md is the tool-agnostic source of truth. Claude Code's built-in `agents-md` mod supports it directly. Use `AGENTS.md` at the root and in scoped subdirectories, without `CLAUDE.md` wrappers or symlinks. The default `claude-md-or-agents-md` mode yields when project Claude instruction files exist on the root-to-working-directory path; see `references/project-setup.md` for migration, settings, and loader limits. Preserve unique instructions before removing old files. User-level and managed Claude files are separate from repository migration.
 
 ## Choose a Mode
 
@@ -32,6 +32,7 @@ AGENTS.md is the tool-agnostic source of truth: Codex, Cursor, Copilot, and the 
 | `references/quality-criteria.md` | Quick audit fails, file is high-risk, or full scoring requested |
 | `references/refactor-workflow.md` | File is bloated (root over ~150 lines), stale, or below target |
 | `references/root-content-guidance.md` | Deciding what stays in root and where moved content goes so it still loads |
+| `references/repo-evals.md` | Measuring whether instruction changes make agents faster or more correct in this repo |
 | `references/templates.md` | Drafting or rebuilding a file from scratch |
 
 ## Writing From Scratch
@@ -60,7 +61,7 @@ find . \( -name "AGENTS.md" -o -name "AGENTS.override.md" -o -name "CLAUDE.md" -
 ls -la CLAUDE.md .claude/rules .cursor/rules 2>/dev/null
 ```
 
-Also check `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`; both load in every repo. `ls -la CLAUDE.md` tells you whether it is a symlink, an `@AGENTS.md` pointer, or a second copy, and a copy is a finding on its own. For monorepos, include workspace-level files. Audit each level independently: root holds universal rules, child files hold directory-specific rules (see the placement hierarchy in `references/root-content-guidance.md`).
+Also check `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`; both load in every repo. `ls -la CLAUDE.md` tells you whether it is a symlink, an `@AGENTS.md` pointer, or a second copy, and a copy is a finding on its own. For monorepos, include workspace-level files. Audit each level independently: root holds universal rules, child files hold directory-specific rules (see what each tool loads in `references/project-setup.md`).
 
 ### Step 2: Select audit mode
 
@@ -91,9 +92,10 @@ In priority order:
 
 1. Fix broken or stale commands; bugs, not style.
 2. Remove generic, duplicate, or obsolete guidance, restatements of what the harness already does, and facts auto-memory owns.
-3. Rewrite blanket prohibitions as the outcome they were protecting; keep the absolute only where the harmful-precision test clears it.
-4. Move detail needed in fewer than ~30% of tasks to a location that loads on demand: a nested `AGENTS.md` in the directory it concerns, a path-scoped `.claude/rules/*.md`, or a skill. Not an `@import`: imported files load at launch and save nothing.
-5. Add emphasis ("IMPORTANT:", "YOU MUST") only on critical rules agents skip, one line at a time.
+3. Diff each project skill (`.claude/skills/`, `.agents/skills/`, `skills/`) against the root file. Where both state the same fact or procedure, keep one copy (the skill for a procedure, root for what every task needs) and leave a one-line pointer in the other.
+4. Rewrite blanket prohibitions as the outcome they were protecting; keep the absolute only where the harmful-precision test clears it.
+5. Move detail needed in fewer than ~30% of tasks to a location that loads on demand: a nested `AGENTS.md` in the directory it concerns, a path-scoped `.claude/rules/*.md`, or a skill (not an `@import`; see Gotchas).
+6. Add emphasis ("IMPORTANT:", "YOU MUST") only on critical rules agents skip, one line at a time.
 
 For an audit request, propose the diffs. A request to improve, refactor, or write the file already authorizes those edits; apply them and report the rationale.
 
@@ -108,21 +110,28 @@ For an audit request, propose the diffs. A request to improve, refactor, or writ
 
 Apply approved edits, re-score with the same checklist, report before/after scores and line counts. Per future PR, add at most one new gotcha, only if it prevented or fixed a real mistake.
 
+## Make Drift a Gate
+
+Step 6 proves the file once; the next rename breaks it again and nothing notices. When the repo has a check script, add one that fails when an instruction file (every `AGENTS.md`, any review rubric, every project `SKILL.md`) names something the repo no longer has:
+
+1. Every `<package-manager> run <script>` names a script in the root manifest, or in the workspace a `--filter` names.
+2. Every relative Markdown link resolves.
+3. Every backtick path names a tracked or non-ignored file or directory, relative to the root or to the instruction file's own directory.
+4. Every backtick camelCase or PascalCase identifier appears somewhere in source.
+
+The identifier check proves existence, not visibility: a documented middleware made private or moved behind another API still passes. Say so in the script's header so nobody reads a pass as more than it is. If the repo keeps eval tasks with setup patches (`references/repo-evals.md`), the same gate checks each patch still applies to HEAD. Run it in the pre-push or CI check, not as advice.
+
 ## Gotchas
 
-- Claude Code reads `CLAUDE.md`, not `AGENTS.md`. A repo with only `AGENTS.md` gives Claude Code no instructions and nothing warns; `/context` shows an empty Memory files list. Add a `CLAUDE.md` containing `@AGENTS.md`.
-- `@import` moves text, not cost. Imported files are expanded into context at launch, so splitting a 400-line `CLAUDE.md` into five imports still loads 400 lines every session. Only nested files, path-scoped `.claude/rules/`, and skills load on demand.
-- `@import` reaches Claude Code only. Codex and Cursor pass the line through as text without warning, so an imported safety or format rule is absent from most sessions while the file still looks correct.
-- `@import` lines inside backticks or fenced blocks are literal text: a real import wrapped in a code span silently never loads. The same rule makes example imports inside fences safe to show.
-- Import chains stop at four hops; deeper content disappears with no error.
-- An import that resolves outside the repo (`@~/.claude/my-prefs.md`) in a project-level file triggers a one-time approval dialog in Claude Code. Decline it and the import stays disabled with no further prompt, so the teammate who pressed No runs a different rule set from then on.
+- A project `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` can suppress the default AGENTS.md fallback across the project. Removing only the root wrapper may not fix loading. Check the built-in mod and `/config` Project instructions, then verify loaded files.
+- `@import` moves text, not cost, and reaches Claude Code only. Imported files expand into context at launch (a 400-line file split into five imports still loads 400 lines), Codex and Cursor see the line as plain text, an import inside a code span or fence never loads, chains stop at four hops, and an external import from AGENTS.md needs an approval the mod cannot raise. Each failure is silent, so a rule every tool must obey stays inline.
 - Nested files do not load the same way per tool. Claude Code loads a subdirectory's file when it reads files there; Codex concatenates only the files on the path from repo root to the launch directory. A rule that lives only in `packages/api/AGENTS.md` is invisible to a Codex session started at the root and to any Claude Code task that never opens that subtree. Universal rules go in root.
 - Codex stops adding instruction files once the concatenated total reaches `project_doc_max_bytes` (32 KiB by default), root first. A bloated root file silently crowds out every nested file beneath it.
-- Project-specific commands in `~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md` load in every repo, so one project's `npm run dev` becomes noise or a wrong command everywhere else.
+- Project-specific commands in `~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md` load in every repo, so one project's `pnpm dev` becomes noise or a wrong command everywhere else.
+- A committed `AGENTS.override.md` replaces `AGENTS.md` in that directory for Codex, so one checked in by accident silently swaps the rule set while the AGENTS.md everyone edits looks correct.
 - Audit `CLAUDE.local.md` only for broken commands and contradictions with the shared file; it's gitignored personal config, and it exists only in the worktree that created it.
 - Don't strip emphasis markers (IMPORTANT, YOU MUST) during a density cut; they exist because plain phrasing was already ignored once. When many lines carry them, none stands out, so the fix for a new skipped rule is emphasis on that one line, not another pass over the file.
 - Content auto-memory owns (user preferences, personal feedback, evolving project status) collects in `CLAUDE.md` from the old `#`-hotkey habit. It loads every session, isn't repo knowledge, and drifts silently because nothing in the codebase contradicts it. Cut it to memory or `CLAUDE.local.md`.
-- A rule duplicating harness behavior isn't free: the agent reconciles it against what the harness already does before it can act, and pays that on every task. "Always read a file before editing it" is a whole reconciliation for zero behavior change.
 - A passing quick score doesn't prove commands run; stale commands hide behind checklist passes. Step 6 smoke-runs aren't optional.
 - Don't rewrite a whole file when targeted diffs would pass; full rewrites destroy battle-tested wording and inflate review burden.
 
@@ -130,7 +139,7 @@ Apply approved edits, re-score with the same checklist, report before/after scor
 
 - `agent-skills-creator`: authoring and improving SKILL.md files (different format and rules).
 - External `cadence-advise` skill where installed: proposes AGENTS.md/CLAUDE.md edits from observed session history; complements this skill's file-first audit.
-- `readme-creator` / `docs-writing`: human-facing documentation; AGENTS.md content that belongs in docs should move there.
+- `ghostwriter`: human-facing documentation; AGENTS.md content that belongs in docs should move there.
 - `codebase-architecture` (Harden mode): the rest of the repo an agent works in. A rule a linter can enforce belongs there as an exit code, not here as prose, and it owns the docs tree this file indexes.
 - Claude Code's `/doctor` checkup: proposes trims for a checked-in `CLAUDE.md`, cutting what Claude can derive from the codebase and migrating always-loaded procedures into skills and nested files. Complementary automated triage; it doesn't run the commands, so it never replaces Step 6.
 
